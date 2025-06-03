@@ -1,112 +1,96 @@
-import { useRef, useState } from "react";
 import styles from "./App.module.css";
+import { useForm } from "react-hook-form";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+const onSubmit = (formData) => {
+	console.log(formData);
+};
+const fieldsSchema = yup.object().shape({
+	email: yup
+		.string()
+		.required("Укажите почту")
+		.matches(
+			/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/,
+			"Неверный E-mail. Формат почты: user@user.ru"
+		)
+		.min(6, "Неверный E-mail. Должно быть не меньше 6 символов")
+		.max(30, "Неверный E-mail. Должно быть не больше 30 символов"),
+	password: yup
+		.string()
+		.required("Укажите пароль")
+		.matches(
+			/(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)/,
+			"Неверный пароль. Пароль должен содержать хотя бы одну строчную букву, одну заглавную букву, одну цифру и один специальный символ"
+		)
+		.min(8, "Неверный пароль. Должно быть больше 8 символов"),
+	passwordRepeat: yup
+		.string()
+		.required("Подтвердите пароль")
+		.oneOf([yup.ref("password")], "Пароли должны совпадать"),
+});
 
 function App() {
-	const [data, setData] = useState({
-		email: "",
-		password: "",
-		passwordRepeat: "",
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm({
+		defaultValues: {
+			email: "",
+			password: "",
+			passwordRepeat: "",
+		},
+		resolver: yupResolver(fieldsSchema),
 	});
-	const [error, setError] = useState({});
 
-	 const submitButtonRef = useRef(null);
-
-	const onValidator = ({ email, password, passwordRepeat }) => {
-				const newError = {};
-
-		if (!email) {
-			newError.email = "Укажите почту";
-		} else if (
-			!/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/.test(email)
-		) {
-			newError.email = "Неверный E-mail. Формат почты: user@user.ru";
-		} else if (email.length > 30) {
-			newError.email =
-				"Неверный логин. Должно быть не больше 20 символов";
-		}
-
-		if (!password) {
-			newError.password = "Укажите пароль";
-		} else if (!/(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)/.test(password)) {
-			newError.password =
-				"Неверный пароль. Пароль должен содержать хотя бы одну строчную букву, одну заглавную букву, одну цифру и один специальный символ";
-		} else if (password.length < 8) {
-			newError.password =
-				"Неверный пароль. Должно быть больше 8 символов";
-		}
-
-		if (!passwordRepeat) {
-			newError.passwordRepeat = "Подтвердите пароль";
-		} else if (password !== passwordRepeat ) {
-			newError.passwordRepeat = "Пароли не совпадают";
-		}
-
-		return newError
+	const errorsMessage = {
+		emailError: errors.email ? errors.email.message : null,
+		passwordError: errors.password ? errors.password.message : null,
+		passwordRepeatError: errors.passwordRepeat
+			? errors.passwordRepeat.message
+			: null,
 	};
 
-	const onChange = ({target}) => {
-		const {name, value } = target
-		const currentState = {...data, [name] : value};
-		setData(currentState)
-		const valError = onValidator(currentState);
-		setError(valError);
-
-		if (Object.keys(valError).length === 0) {
-		submitButtonRef.current.focus()
-	}
-
-	}
-
-
-
-
-	const onSubmit = (event) => {
-		event.preventDefault();
-		console.log(data);
-	};
 	return (
 		<>
 			<div className={styles.registration}>
 				Регистрация пользователя:
-				<form onSubmit={onSubmit} className={styles.form}>
-					{error.email && <div>{error.email}</div>}
+				<form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+					{errorsMessage.emailError && (
+						<div>{errorsMessage.emailError}</div>
+					)}
 					<input
 						type="email"
 						name="email"
-						value={data.email}
 						className={styles.email}
-						onChange={onChange}
+						{...register("email")}
 						placeholder="E-mail"
 					/>
 
-					{error.password && <div>{error.password}</div>}
+					{errorsMessage.passwordError && (
+						<div>{errorsMessage.passwordError}</div>
+					)}
 
 					<input
 						type="password"
 						name="password"
-						value={data.password}
 						className={styles.password}
-						onChange={onChange}
+						{...register("password")}
 						placeholder="Пароль"
 					/>
 
-					{error.passwordRepeat && <div>{error.passwordRepeat}</div>}
+					{errorsMessage.passwordRepeatError && (
+						<div>{errorsMessage.passwordRepeatError}</div>
+					)}
 					<input
 						type="password"
 						name="passwordRepeat"
-						value={data.passwordRepeat}
 						className={styles.password}
-						onChange={onChange}
+						{...register("passwordRepeat")}
 						placeholder="Повторите пароль"
 					/>
 
-					<button
-
-						type="submit"
-						ref={submitButtonRef}
-						disabled={!data.email || !data.password || !data.passwordRepeat || Object.keys(error).length > 0}
-						className={styles.registrationButton}
-					>
+					<button type="submit" className={styles.registrationButton}>
 						Зарегестрироваться
 					</button>
 				</form>

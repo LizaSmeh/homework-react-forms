@@ -9,20 +9,15 @@ function App() {
 	});
 	const [error, setError] = useState({});
 
-	const submitButtonRef = useRef(null);
+	 const submitButtonRef = useRef(null);
 
-	const onChange = ({ target }) => {
-		const { name, value } = target;
-		const { email, password, passwordRepeat } = data;
-		const currentState = { ...data, [name]: value };
-		setData(currentState);
-
-		const newError = {};
+	const onValidator = ({ email, password, passwordRepeat }) => {
+				const newError = {};
 
 		if (!email) {
 			newError.email = "Укажите почту";
 		} else if (
-			!/^([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/.test(email)
+			!/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/.test(email)
 		) {
 			newError.email = "Неверный E-mail. Формат почты: user@user.ru";
 		} else if (email.length > 30) {
@@ -32,7 +27,7 @@ function App() {
 
 		if (!password) {
 			newError.password = "Укажите пароль";
-		} else if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*\W)$/.test(password)) {
+		} else if (!/(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)/.test(password)) {
 			newError.password =
 				"Неверный пароль. Пароль должен содержать хотя бы одну строчную букву, одну заглавную букву, одну цифру и один специальный символ";
 		} else if (password.length < 8) {
@@ -42,15 +37,28 @@ function App() {
 
 		if (!passwordRepeat) {
 			newError.passwordRepeat = "Подтвердите пароль";
-		} else if (password !== passwordRepeat) {
+		} else if (password !== passwordRepeat ) {
 			newError.passwordRepeat = "Пароли не совпадают";
 		}
-		setError(newError);
 
-		if (Object.keys(newError).length === 0) {
-            submitButtonRef.current.focus()
-        }
+		return newError
 	};
+
+	const onChange = ({target}) => {
+		const {name, value } = target
+		const currentState = {...data, [name] : value};
+		setData(currentState)
+		const valError = onValidator(currentState);
+		setError(valError);
+
+		if (Object.keys(valError).length === 0) {
+		submitButtonRef.current.focus()
+	}
+
+	}
+
+
+
 
 	const onSubmit = (event) => {
 		event.preventDefault();
@@ -93,8 +101,10 @@ function App() {
 					/>
 
 					<button
-						ref={submitButtonRef}
+
 						type="submit"
+						ref={submitButtonRef}
+						disabled={!data.email || !data.password || !data.passwordRepeat || Object.keys(error).length > 0}
 						className={styles.registrationButton}
 					>
 						Зарегестрироваться
